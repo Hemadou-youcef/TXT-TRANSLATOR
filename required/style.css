@@ -1,0 +1,42 @@
+*{font-family: changa,sans-serif;}
+body{
+    background-color: #16151d;
+    /*background-image: url("wallpaper.jpg");*/
+    background-size: 50%;
+}
+#mainContent{
+    margin: auto ;
+    width: 80%;
+    background-color: #222222;
+    color: white;
+    padding: 20px;
+    direction: rtl;
+    font-size: 30px;
+    font-family: chanda, sans-serif;
+    border-radius: 10px;
+}
+#mainContent p,#mainContent h1,#mainContent h3,#mainContent h4,#mainContent h5,#mainContent h6{
+    line-height: 3;
+    font-size: 23px;
+    color: #dfdfdf;
+}
+#navigation {
+    display: flex;flex-direction: row;justify-content: space-between;
+}
+a{
+    text-decoration: none;
+}
+button {
+    outline: none;
+    display: block;
+    border: 1px solid grey;
+    color: white;
+    background-color: #16151d;padding: 10px;
+    width: 200px;cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+button:active {
+     outline: 1px solid #bdbdd9;
+}
