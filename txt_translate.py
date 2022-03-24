@@ -139,8 +139,14 @@ class txt_translate:
             self.txt = ""
             self.temp_txt = ""
             self.txt_formdata = "q"
-                    
-            self.translate(i,range_text)
+
+            try_counter = 0
+            while True or try_counter >= 5: 
+                try:
+                    self.translate(i,range_text)
+                    break
+                except:
+                    try_counter += 1
 
             current_message = str(i + 1) + "/" + str(len(self.complete_name))
             sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
@@ -266,11 +272,6 @@ class txt_translate:
     def atoi(self,text):
         return int(text) if text.isdigit() else text
     def natural_keys(self,text):
-        '''
-        alist.sort(key=natural_keys) sorts in human order
-        http://nedbatchelder.com/blog/200712/human_sorting.html
-        (See Toothy's implementation in the comments)
-        '''
         return [ self.atoi(c) for c in re.split(r'(\d+)', text) ]
 
 Acc = txt_translate()

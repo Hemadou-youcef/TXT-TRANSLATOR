@@ -112,24 +112,16 @@ function calcHash(query, windowTkk) {
 
 
 var express = require('express');
-var bodyParser = require('body-parser')
-
+var parser = require('body-parser');
 var app = express();
+app.use(parser.urlencoded({ extended: true }))
+app.listen(14756);
 
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-
-var i = 0
-app.post('/', function(request, response){
- 	let myJson = request.body;
-    // console.log(myJson)
+i = 0
+app.post('/',function(req,res){
     console.log("I RECEIVED I REQUEST N" + i)
     i++
-    var token = calcHash(request.body.text,googleTranslateTKK);
-    
-	response.send(token);
-    	 
-});
+    var token = calcHash(req.body.text,googleTranslateTKK);
 
-app.listen(14756);
+    res.send(token);
+});
