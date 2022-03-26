@@ -22,7 +22,7 @@ class txt_translate:
                         self.novel_name="NOVEL"
                     for key in ['\\','/',':','?','*','<','>','|','"']:
                         self.novel_name = self.novel_name.replace(key,'')
-                    self.prifix = ""
+                    self.suffix  = ""
 
                     os.chdir("txt_files/" + self.novel_name)
                     self.complete_name=["".join(f.split('.')[:-1]) for f in os.listdir() if f.endswith(".txt")]
@@ -81,7 +81,7 @@ class txt_translate:
             self.document_creating()
             self.translate_loop()
             if self.single_file == "y":
-                os.chdir("../../translated_novel/" + self.novel_name + self.prifix)
+                os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
                 new_file = open(self.novel_name + ".txt", "w",encoding="utf-8")
                 new_file.write(self.single_txt)
                 new_file.close()
@@ -103,12 +103,12 @@ class txt_translate:
             os.chdir('translated_novel')
             i = 2
             while True:
-                if os.path.exists(self.novel_name + self.prifix):
-                    self.prifix = "-" + str(i)
+                if os.path.exists(self.novel_name + self.suffix ):
+                    self.suffix  = "-" + str(i)
                     i += 1
                 else:
-                    os.mkdir(self.novel_name + self.prifix)
-                    os.chdir(self.novel_name + self.prifix)
+                    os.mkdir(self.novel_name + self.suffix )
+                    os.chdir(self.novel_name + self.suffix )
                     break
             if self.type == "html":
                 style = open("style.css", "w",encoding="utf-8")
@@ -131,8 +131,8 @@ class txt_translate:
 
         range_bar_unit = 50 / len(self.complete_name)
 
-            
-
+        current_message = "0/" + str(len(self.complete_name))
+        self.progress_bar_header(current_message)
         for i in range(len(self.complete_name)):
             range_bar += range_bar_unit
                 
@@ -141,13 +141,15 @@ class txt_translate:
             self.txt_formdata = "q"
 
             try_counter = 0
-            while True or try_counter >= 5: 
+            while True and try_counter <= 3: 
                 try:
                     self.translate(i,range_text)
                     break
                 except:
                     try_counter += 1
-
+            if try_counter == 4:
+                print("error while translating")
+                break
             current_message = str(i + 1) + "/" + str(len(self.complete_name))
             sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
             sys.stdout.write("\b" * (self.progress + len(current_message) + 1))
@@ -174,8 +176,8 @@ class txt_translate:
                         self.txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
 
                     if len(self.temp_txt) > range_text:
-                        self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt} ).text
-                        translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers).text
+                        self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt} , timeout=10).text
+                        translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
                         translated_txt = json.loads(translated_txt)
                         self.txt += "\n".join(translated_txt)
                         self.temp_txt = ""
@@ -189,8 +191,8 @@ class txt_translate:
                         self.temp_txt += "<pre>" + line[:-1] + "</pre>"
                         self.txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
                                     
-            self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt} ).text
-            translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers).text
+            self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt}, timeout=10).text
+            translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
             translated_txt = json.loads(translated_txt)
             self.txt += "\n".join(translated_txt)
 
@@ -211,7 +213,7 @@ class txt_translate:
                 self.single_txt +=  results[k].get_text(strip=True).strip() + "\n"
             self.single_txt += "\n\n"
         else:
-            os.chdir("../../translated_novel/" + self.novel_name + self.prifix)
+            os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
             if self.type == "html":
                 if i == 0:
                     if i == (len(self.complete_name) - 1):
@@ -228,11 +230,6 @@ class txt_translate:
                 new_file.write(navigation)
             else:
                 new_file = open(self.complete_name[i] + ".txt", "w",encoding="utf-8")
-            
-            # selector = Selector(text=self.txt)
-            # selector.xpath("//i").remove()
-            # for pre in selector.xpath("//pre/text()").getall():
-                    # new_file.write("<p>" + "".join(pre) + "</p>")
 
             soup = BeautifulSoup(self.txt, 'html5lib')
             for s in soup.select('i'):
@@ -256,13 +253,13 @@ class txt_translate:
             new_file.close()
             os.chdir("../../txt_files/" + self.novel_name)
         os.remove(self.complete_name[i] + ".txt") 
-    def progress_bar_header(self):
+    def progress_bar_header(self,message):
         toolbar_width = 50
         self.progress = 51
         print("PROGRESS...")
-        sys.stdout.write("│%s│" % (" " * toolbar_width))
+        sys.stdout.write("│%s│" % (" " * toolbar_width) + message + " ")
         sys.stdout.flush()
-        sys.stdout.write("\b" * (toolbar_width+1))
+        sys.stdout.write("\b" * (toolbar_width + len(message) + 2))
 
     def progress_bar_animated(self):
         sys.stdout.write("█")
