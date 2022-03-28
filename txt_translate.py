@@ -124,7 +124,6 @@ class txt_translate:
             sys.exit()
 
     def translate_loop(self):
-        self.progress_bar_header()
         range_bar = 0
         range_text = 3000
         self.single_txt= ""
@@ -142,11 +141,9 @@ class txt_translate:
 
             try_counter = 0
             while True and try_counter <= 3: 
-                try:
-                    self.translate(i,range_text)
+                if self.translate(i,range_text):
                     break
-                except:
-                    try_counter += 1
+                try_counter += 1
             if try_counter == 4:
                 print("error while translating")
                 break
@@ -159,6 +156,10 @@ class txt_translate:
             for j in range(int(range_bar)):
                 self.progress_bar_animated()
                 range_bar-= 1
+        
+        for i in range(len(self.complete_name)):
+            os.remove(self.complete_name[i] + ".txt") 
+            
         sys.stdout.write("|\n")
     def translate(self,i,range_text):
         try:
@@ -198,7 +199,7 @@ class txt_translate:
 
             txt.close()
         except:
-            pass
+            return False
         
         if self.single_file == "y":
             self.single_txt += "----------------------------------\n"
@@ -252,10 +253,12 @@ class txt_translate:
             
             new_file.close()
             os.chdir("../../txt_files/" + self.novel_name)
-        os.remove(self.complete_name[i] + ".txt") 
+        
+        return True
     def progress_bar_header(self,message):
         toolbar_width = 50
         self.progress = 51
+        print("")
         print("PROGRESS...")
         sys.stdout.write("│%s│" % (" " * toolbar_width) + message + " ")
         sys.stdout.flush()
