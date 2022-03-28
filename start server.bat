@@ -1,3 +1,3 @@
 cd server
 cls
-nodemon hash-server
+node hash-server

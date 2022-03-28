@@ -5,6 +5,7 @@ import requests
 import json
 import re
 from bs4 import BeautifulSoup
+import threading
 # from parsel import Selector
 
 # googleTranslateTKK = "448487.932609646"
@@ -14,7 +15,6 @@ class txt_translate:
     def initialisation (self):
         try:
             self.single_file = "n"
-            
             while True:
                 try:
                     self.novel_name = input("WRITE NOVEL NAME: ").upper()
@@ -33,19 +33,6 @@ class txt_translate:
                     print("there is no file here")
                 except Exception as e:
                     print(e)
-                
-
-            # self.start = input("START NUMBER: ")
-            # if not self.start :
-            #     self.start = 1
-            # else:
-            #     self.start = int(self.start)
-             
-            # self.end = input("END NUMBER: ")
-            # if not self.end :
-            #     self.end = 1
-            # else:
-            #     self.end = int(self.end)
 
             self.src = input("SOURCE LANGUAGE : ").lower()
             if not self.src :
@@ -80,14 +67,9 @@ class txt_translate:
 
             self.document_creating()
             self.translate_loop()
-            if self.single_file == "y":
-                os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
-                new_file = open(self.novel_name + ".txt", "w",encoding="utf-8")
-                new_file.write(self.single_txt)
-                new_file.close()
-                os.chdir("../../txt_files/" + self.novel_name)
-            os.chdir("../")
-            os.rmdir(self.novel_name) 
+            
+            # os.chdir("../")
+            # os.rmdir(self.novel_name) 
             print("")
             print("DONE!!")
             print("THANK FOR USING OUR PRODUCT")
@@ -124,7 +106,6 @@ class txt_translate:
             sys.exit()
 
     def translate_loop(self):
-        self.progress_bar_header()
         range_bar = 0
         range_text = 3000
         self.single_txt= ""
@@ -133,72 +114,107 @@ class txt_translate:
 
         current_message = "0/" + str(len(self.complete_name))
         self.progress_bar_header(current_message)
+
+        self.universal_counter = -1
+        self.current_active_thread = 0
         for i in range(len(self.complete_name)):
-            range_bar += range_bar_unit
-                
-            self.txt = ""
-            self.temp_txt = ""
-            self.txt_formdata = "q"
+            
 
-            try_counter = 0
-            while True and try_counter <= 3: 
-                try:
-                    self.translate(i,range_text)
-                    break
-                except:
-                    try_counter += 1
-            if try_counter == 4:
-                print("error while translating")
-                break
-            current_message = str(i + 1) + "/" + str(len(self.complete_name))
-            sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
-            sys.stdout.write("\b" * (self.progress + len(current_message) + 1))
-                
-            sys.stdout.flush()
+            
+            # try_counter = 0
+            # while True and try_counter <= 3: 
+            #     if self.translate(i,range_text):
+            #         break
+            #     try_counter += 1
 
-            for j in range(int(range_bar)):
-                self.progress_bar_animated()
-                range_bar-= 1
+            # if try_counter == 4:
+            #     print("error while translating")
+            #     break
+
+            threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)).start()
+
+            self.current_active_thread += 1
+            while self.current_active_thread >= 5:
+                pass
+            
+
+
+            
+        # for i in range(len(self.complete_name)):
+        #     os.remove(self.complete_name[i] + ".txt") 
+            
+        if self.single_file == "y":
+            os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
+            new_file = open(self.novel_name + ".txt", "w",encoding="utf-8")
+            new_file.write(self.single_txt)
+            new_file.close()
+            os.chdir("../../txt_files/" + self.novel_name)
         sys.stdout.write("|\n")
-    def translate(self,i,range_text):
-        try:
-            txt = open(self.complete_name[i] + ".txt", "r",encoding="utf-8")
-            txt_read = txt.read()
-            txt_read_lenght = len(txt_read)
-            txt.seek(0)
-            if txt_read_lenght > range_text:
-                for line in txt:
-                    if line == '\n':
-                        self.temp_txt += ""
-                        self.txt_formdata += "&q"
-                    else:
-                        self.temp_txt += "<pre>" + line[:-1] + "</pre>"
-                        self.txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
+    def Threading_translate(self,i,range_text,range_bar,range_bar_unit):
+        range_bar += range_bar_unit
+        try_counter = 0
+        while True and try_counter <= 10: 
+            if self.translate(i,range_text):
+                break
+            try_counter += 1
 
-                    if len(self.temp_txt) > range_text:
-                        self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt} , timeout=10).text
-                        translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
+        if try_counter == 11:
+            print("error while translating")
+            return False
+        
+        self.universal_counter += 1
+        current_message = str(self.universal_counter + 1) + "/" + str(len(self.complete_name))
+        sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
+        sys.stdout.write("\b" * (self.progress + len(current_message) + 1))
+                
+        sys.stdout.flush()
+
+        for j in range(int(range_bar)):
+            self.progress_bar_animated()
+            range_bar-= 1
+        self.current_active_thread -= 1
+    def translate(self,i,range_text):
+        txt = ""
+        temp_txt = ""
+        txt_formdata = "q"
+        try:
+            txt_file = open(self.complete_name[i] + ".txt", "r",encoding="utf-8")
+            txt_read = txt_file.read()
+            txt_read_lenght = len(txt_read)
+            txt_file.seek(0)
+            if txt_read_lenght > range_text:
+                for line in txt_file:
+                    if line == '\n':
+                        temp_txt += ""
+                        txt_formdata += "&q"
+                    else:
+                        temp_txt += "<pre>" + line[:-1] + "</pre>"
+                        txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
+
+                    if len(temp_txt) > range_text:
+                        Hash = requests.post("http://localhost:14756/",data ={'text':temp_txt} , timeout=10).text
+                        translated_txt = requests.post(googleTrans.format(self.src,self.dest,Hash),data=txt_formdata[2:],headers=headers, timeout=10).text
                         translated_txt = json.loads(translated_txt)
-                        self.txt += "\n".join(translated_txt)
-                        self.temp_txt = ""
-                        self.txt_formdata = 'q'
+                        txt += "\n".join(translated_txt)
+                        temp_txt = ""
+                        txt_formdata = 'q'
             else:
                 for line in txt:
                     if line == '\n':
-                        self.temp_txt += ""
-                        self.txt_formdata += "&q"
+                        temp_txt += ""
+                        txt_formdata += "&q"
                     else:
-                        self.temp_txt += "<pre>" + line[:-1] + "</pre>"
-                        self.txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
+                        temp_txt += "<pre>" + line[:-1] + "</pre>"
+                        txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
                                     
-            self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt}, timeout=10).text
-            translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
+            Hash = requests.post("http://localhost:14756/",data ={'text':temp_txt}, timeout=10).text
+            translated_txt = requests.post(googleTrans.format(self.src,self.dest,Hash),data=txt_formdata[2:],headers=headers, timeout=10).text
             translated_txt = json.loads(translated_txt)
-            self.txt += "\n".join(translated_txt)
+            txt += "\n".join(translated_txt)
 
-            txt.close()
+            txt_file.close()
         except:
-            pass
+            return False
         
         if self.single_file == "y":
             self.single_txt += "----------------------------------\n"
@@ -213,7 +229,7 @@ class txt_translate:
                 self.single_txt +=  results[k].get_text(strip=True).strip() + "\n"
             self.single_txt += "\n\n"
         else:
-            os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
+            # os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
             if self.type == "html":
                 if i == 0:
                     if i == (len(self.complete_name) - 1):
@@ -231,7 +247,7 @@ class txt_translate:
             else:
                 new_file = open(self.complete_name[i] + ".txt", "w",encoding="utf-8")
 
-            soup = BeautifulSoup(self.txt, 'html5lib')
+            soup = BeautifulSoup(txt, 'html5lib')
             for s in soup.select('i'):
                 s.extract()
 
@@ -251,11 +267,12 @@ class txt_translate:
                 
             
             new_file.close()
-            os.chdir("../../txt_files/" + self.novel_name)
-        os.remove(self.complete_name[i] + ".txt") 
+            # os.chdir("../../txt_files/" + self.novel_name)
+        return True
     def progress_bar_header(self,message):
         toolbar_width = 50
         self.progress = 51
+        print("")
         print("PROGRESS...")
         sys.stdout.write("│%s│" % (" " * toolbar_width) + message + " ")
         sys.stdout.flush()
