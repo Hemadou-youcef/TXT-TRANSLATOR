@@ -47,10 +47,12 @@ class txt_translate:
             if not self.type :
                 self.type="html"
             if self.type == "txt" and len(self.complete_name) != 1:
-                self.single_file = input("SINGLE FILE??: (Y/N)(DEFAULT=N): ").lower()
+                self.single_file = input("SINGLE FILE?? (Y/N)(DEFAULT=N): ").lower()
                 if not self.type :
                     self.type="n"
-            
+            self.thread_number = int(input("HOW MUCH THREAD (DEFAULT=10): "))
+            if not self.thread_number :
+                self.type=10
             
 
             header = open("required/header.txt", "r")
@@ -114,8 +116,9 @@ class txt_translate:
 
         current_message = "0/" + str(len(self.complete_name))
         self.progress_bar_header(current_message)
-
-        self.universal_counter = -1
+        
+        self.universal_thread_counter = 0
+        self.universal_chapter_counter = -1
         self.current_active_thread = 0
         for i in range(len(self.complete_name)):
             
@@ -134,15 +137,15 @@ class txt_translate:
             threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)).start()
 
             self.current_active_thread += 1
-            while self.current_active_thread >= 5:
+            while self.current_active_thread >= self.thread_number:
                 pass
-            
+        while self.universal_thread_counter < len(self.complete_name):
+            pass    
 
-
+        for i in range(len(self.complete_name)):
+            os.remove(self.complete_name[i] + ".txt") 
             
-        # for i in range(len(self.complete_name)):
-        #     os.remove(self.complete_name[i] + ".txt") 
-            
+          
         if self.single_file == "y":
             os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
             new_file = open(self.novel_name + ".txt", "w",encoding="utf-8")
@@ -162,8 +165,8 @@ class txt_translate:
             print("error while translating")
             return False
         
-        self.universal_counter += 1
-        current_message = str(self.universal_counter + 1) + "/" + str(len(self.complete_name))
+        self.universal_chapter_counter += 1
+        current_message = str(self.universal_chapter_counter + 1) + "/" + str(len(self.complete_name))
         sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
         sys.stdout.write("\b" * (self.progress + len(current_message) + 1))
                 
@@ -173,6 +176,8 @@ class txt_translate:
             self.progress_bar_animated()
             range_bar-= 1
         self.current_active_thread -= 1
+        self.universal_thread_counter += 1
+          
     def translate(self,i,range_text):
         txt = ""
         temp_txt = ""
