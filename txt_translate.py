@@ -1,3 +1,4 @@
+from cmath import exp
 import sys
 import os
 import time
@@ -6,6 +7,7 @@ import json
 import re
 from bs4 import BeautifulSoup
 import threading
+import queue
 # from parsel import Selector
 
 # googleTranslateTKK = "448487.932609646"
@@ -50,10 +52,11 @@ class txt_translate:
                 self.single_file = input("SINGLE FILE?? (Y/N)(DEFAULT=N): ").lower()
                 if not self.type :
                     self.type="n"
-            self.thread_number = int(input("HOW MUCH THREAD (DEFAULT=10): "))
+            self.thread_number = input("HOW MUCH THREAD (DEFAULT=10): ")
             if not self.thread_number :
-                self.type=10
-            
+                self.thread_number=10
+            else:
+                self.thread_number = int(self.thread_number)
 
             header = open("required/header.txt", "r")
             self.header = header.read()
@@ -94,13 +97,16 @@ class txt_translate:
                     os.mkdir(self.novel_name + self.suffix )
                     os.chdir(self.novel_name + self.suffix )
                     break
+            
+            self.source_path = "txt_files/" + self.novel_name + "/"
+            self.target_path = "translated_novel/" + self.novel_name + self.suffix + "/"
+            
+            print("CREATING SUCCESSFULLY")
+            os.chdir("../..")
             if self.type == "html":
-                style = open("style.css", "w",encoding="utf-8")
+                style = open(self.target_path + "style.css", "w",encoding="utf-8")
                 style.write(self.style)
                 style.close()
-
-            print("CREATING SUCCESSFULLY")
-            os.chdir("../../txt_files/" + self.novel_name)
         except Exception as e:
             print("ERROR CREATING DOCUMENT")
             print("CLOSING...")
@@ -117,9 +123,8 @@ class txt_translate:
         current_message = "0/" + str(len(self.complete_name))
         self.progress_bar_header(current_message)
         
-        self.universal_thread_counter = 0
         self.universal_chapter_counter = -1
-        self.current_active_thread = 0
+        self.thread_list = queue.Queue()
         for i in range(len(self.complete_name)):
             
 
@@ -133,25 +138,28 @@ class txt_translate:
             # if try_counter == 4:
             #     print("error while translating")
             #     break
+            self.thread_list.put(threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)))
+            
+        for i in range(self.thread_number):
+            current_thread = self.thread_list.get()
+            current_thread.start()
+        # while self.universal_thread_counter < len(self.complete_name):
+        #     pass    
 
-            threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)).start()
-
-            self.current_active_thread += 1
-            while self.current_active_thread >= self.thread_number:
-                pass
-        while self.universal_thread_counter < len(self.complete_name):
-            pass    
+        while self.thread_list.unfinished_tasks != 0:
+            time.sleep(1)
+            pass   
 
         for i in range(len(self.complete_name)):
             os.remove(self.complete_name[i] + ".txt") 
             
-          
+        
         if self.single_file == "y":
-            os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
-            new_file = open(self.novel_name + ".txt", "w",encoding="utf-8")
+            # os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
+            new_file = open(self.target_path + self.novel_name + ".txt", "w",encoding="utf-8")
             new_file.write(self.single_txt)
             new_file.close()
-            os.chdir("../../txt_files/" + self.novel_name)
+            # os.chdir("../../txt_files/" + self.novel_name)
         sys.stdout.write("|\n")
     def Threading_translate(self,i,range_text,range_bar,range_bar_unit):
         range_bar += range_bar_unit
@@ -175,15 +183,18 @@ class txt_translate:
         for j in range(int(range_bar)):
             self.progress_bar_animated()
             range_bar-= 1
-        self.current_active_thread -= 1
-        self.universal_thread_counter += 1
+        try:
+            current_thread = self.thread_list.get()
+            current_thread.start()
+        except:
+            pass
           
     def translate(self,i,range_text):
         txt = ""
         temp_txt = ""
         txt_formdata = "q"
         try:
-            txt_file = open(self.complete_name[i] + ".txt", "r",encoding="utf-8")
+            txt_file = open(self.source_path + self.complete_name[i] + ".txt", "r",encoding="utf-8")
             txt_read = txt_file.read()
             txt_read_lenght = len(txt_read)
             txt_file.seek(0)
@@ -204,7 +215,7 @@ class txt_translate:
                         temp_txt = ""
                         txt_formdata = 'q'
             else:
-                for line in txt:
+                for line in txt_file:
                     if line == '\n':
                         temp_txt += ""
                         txt_formdata += "&q"
@@ -246,11 +257,11 @@ class txt_translate:
                 else:
                     navigation = '<div id="navigation"><a href="' + self.complete_name[i - 1] + '.html"><button>PREV</button></a><a href="' + self.complete_name[i + 1] + '.html"><button>NEXT</button></a></div>'
                 
-                new_file = open(self.complete_name[i] + ".html", "w",encoding="utf-8")
+                new_file = open(self.target_path + self.complete_name[i] + ".html", "w",encoding="utf-8")
                 new_file.write(self.header)
                 new_file.write(navigation)
             else:
-                new_file = open(self.complete_name[i] + ".txt", "w",encoding="utf-8")
+                new_file = open(self.target_path + self.complete_name[i] + ".txt", "w",encoding="utf-8")
 
             soup = BeautifulSoup(txt, 'html5lib')
             for s in soup.select('i'):
