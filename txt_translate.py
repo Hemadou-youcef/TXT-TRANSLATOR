@@ -132,6 +132,7 @@ class txt_translate:
 
         current_message = "0/" + str(len(self.complete_name))
         self.progress_bar_header(current_message)
+        self.session_requests = requests.session()
         for i in range(len(self.complete_name)):
             range_bar += range_bar_unit
                 
@@ -178,7 +179,7 @@ class txt_translate:
 
                     if len(self.temp_txt) > range_text:
                         self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt} , timeout=10).text
-                        translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
+                        translated_txt = self.session_requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=50).text
                         translated_txt = json.loads(translated_txt)
                         self.txt += "\n".join(translated_txt)
                         self.temp_txt = ""
@@ -193,7 +194,7 @@ class txt_translate:
                         self.txt_formdata += "&q=%3Cpre%3E%" + "%".join(re.findall('..',line[:-1].encode("utf-8").hex())) + "%3C%2Fpre%3E"
                                     
             self.Hash = requests.post("http://localhost:14756/",data ={'text':self.temp_txt}, timeout=10).text
-            translated_txt = requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=10).text
+            translated_txt = self.session_requests.post(googleTrans.format(self.src,self.dest,self.Hash),data=self.txt_formdata[2:],headers=headers, timeout=50).text
             translated_txt = json.loads(translated_txt)
             self.txt += "\n".join(translated_txt)
 
