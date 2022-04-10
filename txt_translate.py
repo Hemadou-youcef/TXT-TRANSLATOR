@@ -8,6 +8,7 @@ import re
 from bs4 import BeautifulSoup
 import threading
 import queue
+from progress.bar import IncrementalBar
 # from parsel import Selector
 
 # googleTranslateTKK = "448487.932609646"
@@ -120,39 +121,31 @@ class txt_translate:
 
         range_bar_unit = 50 / len(self.complete_name)
 
-        current_message = "0/" + str(len(self.complete_name))
-        self.progress_bar_header(current_message)
+        self.progress_bar_header(len(self.complete_name))
         
         self.universal_chapter_counter = -1
         self.thread_list = queue.Queue()
         for i in range(len(self.complete_name)):
-            
-
-            
-            # try_counter = 0
-            # while True and try_counter <= 3: 
-            #     if self.translate(i,range_text):
-            #         break
-            #     try_counter += 1
-
-            # if try_counter == 4:
-            #     print("error while translating")
-            #     break
             self.thread_list.put(threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)))
             
-        for i in range(self.thread_number):
-            current_thread = self.thread_list.get()
-            current_thread.start()
-        # while self.universal_thread_counter < len(self.complete_name):
-        #     pass    
+        if len(self.complete_name) < self.thread_number:
+            for i in range(len(self.complete_name)):
+                current_thread = self.thread_list.get()
+                current_thread.start()
+        else:
+            for i in range(self.thread_number):
+                current_thread = self.thread_list.get()
+                current_thread.start()  
 
-        while self.thread_list.unfinished_tasks != 0:
+        while self.universal_chapter_counter + 1 != len(self.complete_name):
             time.sleep(1)
             pass   
-
+        self.bar.finish()
+        os.chdir("txt_files/" + self.novel_name)
         for i in range(len(self.complete_name)):
             os.remove(self.complete_name[i] + ".txt") 
-            
+        os.chdir("../")
+        os.rmdir(self.novel_name)
         
         if self.single_file == "y":
             # os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
@@ -174,15 +167,8 @@ class txt_translate:
             return False
         
         self.universal_chapter_counter += 1
-        current_message = str(self.universal_chapter_counter + 1) + "/" + str(len(self.complete_name))
-        sys.stdout.write(" " * (self.progress - 1) + "|" + current_message + " ")
-        sys.stdout.write("\b" * (self.progress + len(current_message) + 1))
-                
-        sys.stdout.flush()
+        self.bar.next()
 
-        for j in range(int(range_bar)):
-            self.progress_bar_animated()
-            range_bar-= 1
         try:
             current_thread = self.thread_list.get()
             current_thread.start()
@@ -286,18 +272,10 @@ class txt_translate:
             # os.chdir("../../txt_files/" + self.novel_name)
         return True
     def progress_bar_header(self,message):
-        toolbar_width = 50
-        self.progress = 51
         print("")
-        print("PROGRESS...")
-        sys.stdout.write("│%s│" % (" " * toolbar_width) + message + " ")
-        sys.stdout.flush()
-        sys.stdout.write("\b" * (toolbar_width + len(message) + 2))
+        self.bar = IncrementalBar('Translating: ', max=message)
+        self.bar.next(0)
 
-    def progress_bar_animated(self):
-        sys.stdout.write("█")
-        sys.stdout.flush()
-        self.progress -= 1
     
     def atoi(self,text):
         return int(text) if text.isdigit() else text
