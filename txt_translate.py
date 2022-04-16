@@ -128,7 +128,7 @@ class txt_translate:
         for i in range(len(self.complete_name)):
             self.thread_list.put(threading.Thread(target=self.Threading_translate, args=(i,range_text,range_bar,range_bar_unit)))
             
-        if len(self.complete_name) < self.thread_number:
+        if len(self.complete_name) <= self.thread_number:
             for i in range(len(self.complete_name)):
                 current_thread = self.thread_list.get()
                 current_thread.start()
@@ -137,9 +137,10 @@ class txt_translate:
                 current_thread = self.thread_list.get()
                 current_thread.start()  
 
-        while self.universal_chapter_counter + 1 != len(self.complete_name):
+        while self.thread_list.unfinished_tasks != 0:
             time.sleep(1)
-            pass   
+            pass
+
         self.bar.finish()
         os.chdir("txt_files/" + self.novel_name)
         for i in range(len(self.complete_name)):
@@ -167,11 +168,15 @@ class txt_translate:
             return False
         
         self.universal_chapter_counter += 1
+        self.thread_list.task_done()
         self.bar.next()
 
         try:
-            current_thread = self.thread_list.get()
-            current_thread.start()
+            if len(self.complete_name) <= self.thread_number:
+                pass
+            elif len(self.complete_name) == self.universal_chapter_counter:
+                current_thread = self.thread_list.get()
+                current_thread.start()
         except:
             pass
           
