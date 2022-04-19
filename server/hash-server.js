@@ -114,7 +114,8 @@ function calcHash(query, windowTkk) {
 var express = require('express');
 var parser = require('body-parser');
 var app = express();
-app.use(parser.urlencoded({ extended: true }))
+app.use(parser.json({limit: '50mb'}));
+app.use(parser.urlencoded({limit: '50mb', extended: true}));
 app.listen(14756);
 
 i = 0

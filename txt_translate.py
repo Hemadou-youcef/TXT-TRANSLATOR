@@ -69,6 +69,8 @@ class txt_translate:
 
             style = open("required/style.css", "r")
             self.style = style.read()
+            if self.dest.lower() != "ar":
+                self.style.replace("rtl","ltr")
             style.close()
 
             self.document_creating()
@@ -156,29 +158,27 @@ class txt_translate:
             # os.chdir("../../txt_files/" + self.novel_name)
         sys.stdout.write("|\n")
     def Threading_translate(self,i,range_text,range_bar,range_bar_unit):
+        self.universal_chapter_counter += 1
         range_bar += range_bar_unit
         try_counter = 0
         while True and try_counter <= 10: 
             if self.translate(i,range_text):
                 break
             try_counter += 1
-
         if try_counter == 11:
             print("error while translating")
             return False
         
-        self.universal_chapter_counter += 1
-        self.thread_list.task_done()
         self.bar.next()
-
         try:
             if len(self.complete_name) <= self.thread_number:
                 pass
-            elif len(self.complete_name) == self.universal_chapter_counter:
+            elif len(self.complete_name) -1 != self.universal_chapter_counter:
                 current_thread = self.thread_list.get()
                 current_thread.start()
         except:
             pass
+        self.thread_list.task_done()
           
     def translate(self,i,range_text):
         txt = ""
@@ -202,6 +202,8 @@ class txt_translate:
                         Hash = requests.post("http://localhost:14756/",data ={'text':temp_txt} , timeout=10).text
                         translated_txt = requests.post(googleTrans.format(self.src,self.dest,Hash),data=txt_formdata[2:],headers=headers, timeout=10).text
                         translated_txt = json.loads(translated_txt)
+                        for number_ in range(len(translated_txt)):
+                            translated_txt[number_] = translated_txt[number_][0]
                         txt += "\n".join(translated_txt)
                         temp_txt = ""
                         txt_formdata = 'q'
@@ -217,6 +219,8 @@ class txt_translate:
             Hash = requests.post("http://localhost:14756/",data ={'text':temp_txt}, timeout=10).text
             translated_txt = requests.post(googleTrans.format(self.src,self.dest,Hash),data=txt_formdata[2:],headers=headers, timeout=10).text
             translated_txt = json.loads(translated_txt)
+            for number_ in range(len(translated_txt)):
+                translated_txt[number_] = translated_txt[number_][0]
             txt += "\n".join(translated_txt)
 
             txt_file.close()
