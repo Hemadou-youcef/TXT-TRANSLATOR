@@ -15,12 +15,12 @@ from progress.bar import IncrementalBar
 googleTrans = "https://translate.googleapis.com/translate_a/t?anno=3&client=te&v=1.0&format=html&sl={}&tl={}&tk={}"
 headers = {"Content-Type": "application/x-www-form-urlencoded;charset=utf-8"}
 class txt_translate:
-    def initialisation (self):
+    def initialisation (self,argv):
         try:
             self.single_file = "n"
             while True:
                 try:
-                    self.novel_name = input("WRITE NOVEL NAME: ").upper()
+                    self.novel_name = argv[0]
                     if not self.novel_name :
                         self.novel_name="NOVEL"
                     for key in ['\\','/',':','?','*','<','>','|','"']:
@@ -30,6 +30,7 @@ class txt_translate:
                     os.chdir("txt_files/" + self.novel_name)
                     self.complete_name=["".join(f.split('.')[:-1]) for f in os.listdir() if f.endswith(".txt")]
                     self.complete_name.sort(key=self.natural_keys)
+
                     os.chdir("../..")
                     if len(self.complete_name) != 0:
                         break
@@ -37,23 +38,24 @@ class txt_translate:
                 except Exception as e:
                     print(e)
 
-            self.src = input("SOURCE LANGUAGE : ").lower()
+
+            self.src = argv[1]
             if not self.src :
                 self.src = 'auto'
 
 
-            self.dest = input("DESTINATION LANGUAGE : ").lower()
+            self.dest = argv[2]
             if not self.dest :
                 self.dest = 'en'
 
-            self.type = input("TXT OR HTML (DEFAULT = HTML): ").lower()
+            self.type = argv[3]
             if not self.type :
                 self.type="html"
             if self.type == "txt" and len(self.complete_name) != 1:
-                self.single_file = input("SINGLE FILE?? (Y/N)(DEFAULT=N): ").lower()
+                self.single_file = argv[4]
                 if not self.single_file :
                     self.single_file="n"
-            self.thread_number = input("HOW MUCH THREAD (DEFAULT=10): ")
+            self.thread_number = argv[4]
             if not self.thread_number :
                 self.thread_number=10
             else:
@@ -76,11 +78,6 @@ class txt_translate:
             self.document_creating()
             self.translate_loop()
             
-            # os.chdir("../")
-            # os.rmdir(self.novel_name) 
-            print("")
-            print("DONE!!")
-            print("THANK FOR USING OUR PRODUCT")
         except Exception as e:
             print("ERROR ENTRING LIGHT NOVEL")
             print(e)
@@ -151,12 +148,9 @@ class txt_translate:
         os.rmdir(self.novel_name)
         
         if self.single_file == "y":
-            # os.chdir("../../translated_novel/" + self.novel_name + self.suffix )
             new_file = open(self.target_path + self.novel_name + ".txt", "w",encoding="utf-8")
             new_file.write(self.single_txt)
             new_file.close()
-            # os.chdir("../../txt_files/" + self.novel_name)
-        sys.stdout.write("|\n")
     def Threading_translate(self,i,range_text,range_bar,range_bar_unit):
         self.universal_chapter_counter += 1
         range_bar += range_bar_unit
@@ -290,7 +284,3 @@ class txt_translate:
         return int(text) if text.isdigit() else text
     def natural_keys(self,text):
         return [ self.atoi(c) for c in re.split(r'(\d+)', text) ]
-
-Acc = txt_translate()
-Acc.initialisation ()
-time.sleep(10)
