@@ -51,8 +51,8 @@ class txt_translate:
                 self.type="html"
             if self.type == "txt" and len(self.complete_name) != 1:
                 self.single_file = input("SINGLE FILE?? (Y/N)(DEFAULT=N): ").lower()
-                if not self.type :
-                    self.type="n"
+                if not self.single_file :
+                    self.single_file="n"
             self.thread_number = input("HOW MUCH THREAD (DEFAULT=10): ")
             if not self.thread_number :
                 self.thread_number=10
@@ -231,7 +231,7 @@ class txt_translate:
             self.single_txt += "----------------------------------\n"
             self.single_txt += self.complete_name[i] + "\n\n"
             
-            soup = BeautifulSoup(self.txt, 'html5lib')
+            soup = BeautifulSoup(txt, 'html5lib')
             for s in soup.select('i'):
                 s.extract()
 
